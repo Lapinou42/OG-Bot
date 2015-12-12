@@ -1,24 +1,15 @@
 import re
 import logging
-from mechanize import Browser
-from hangar import Hangar
-from buildings import Buildings
-import buildings
-from defense import Defense
-import cookielib
 import sys
-from authentication import AuthenticationProvider
 import ConfigParser
 from general import General
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
+import util
+from authentication import AuthenticationProvider
 
 # setting up logger
-logger = logging.getLogger('ogame-bot')
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
+logger = util.setup_logger()
 logger.info('Starting the bot')
 
 config = ConfigParser.ConfigParser()
@@ -42,12 +33,4 @@ else:
     password = sys.argv[2]
     universe = sys.argv[3]
 
-browser = AuthenticationProvider(username, password, universe).get_browser()
-
-general_client = General(browser, universe)
-planets = general_client.get_planets()
-building_client = Buildings(browser, universe)
-general_client = General(browser, universe)
-
-for planet in planets:
-    building_client.auto_build_structure(planet)
+driver = AuthenticationProvider(username, password, universe).get_driver()

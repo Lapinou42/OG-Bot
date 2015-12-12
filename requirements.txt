@@ -1,2 +1,2 @@
-mechanize
+selenium
 beautifulsoup4

@@ -1,4 +1,5 @@
 import mechanize
+import logging
 
 class UrlProvider:
     def __init__(self, universe):
@@ -52,3 +53,12 @@ def submit_request(browser):
             return res
         except mechanize.URLError:
             self.error("URLError submitting form, trying again for the %sth time" % attempt)
+
+def setup_logger():
+    logger = logging.getLogger('ogame-bot')
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger

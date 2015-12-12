@@ -28,9 +28,9 @@ class BuildingTypes(Enum):
     DeuteriumTank = "24"
 
 class Building(object):
-    def __init__(self, name, amount):
+    def __init__(self, name, level):
         self.name = name
-        self.amount = amount
+        self.level = level
 
 class Buildings:
     def __init__(self, browser, universe):
@@ -66,17 +66,30 @@ class Buildings:
 
     def auto_build_structure(self, planet):
         resources = self.general_client.get_resources(planet)
+        buildings = self.get_buildings(planet)
+
+        crystal_mine = buildings.get(BuildingTypes.CrystalMine)
+        metal_mine = buildings.get(BuildingTypes.MetalMine)
+        deuterium_synthesizer = buildings.get(BuildingTypes.DeuteriumSynthesizer)
 
         if resources.energy < 0:
             self.build_structure(BuildingTypes.SolarPlant, planet)
         else:
-            self.build_structure(BuildingTypes.CrystalMine, planet)
+            if crystal_mine.level - metal_mine.level > 2:
+                self.build_structure(BuildingTypes.CrystalMine, planet)
+            else:
+                if deuterium_synthesizer.level - metal_mine.level > 6:
+                    self.build_structure(BuildingTypes.DeuteriumSynthesizer, planet)
+                else:
+                    self.build_structure(BuildingTypes.MetalMine, planet)
 
     def build_structure(self, type, planet):
         if self.construction_mode(planet):
             self.logger.info('Planet is already in construction mode')
             return
-        self.build_structure_item(type.value, planet)
+        else:
+            self.logger.info('Building %s on planet %s' %(type, planet[1]))
+            self.build_structure_item(type.value, planet)
 
     def build_structure_item(self, type, planet = None):
         self.browser.select_form(name='form')

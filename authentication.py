@@ -1,8 +1,9 @@
 import logging
-from mechanize import Browser
 from bs4 import BeautifulSoup
 import cookielib
 import os
+from selenium import webdriver
+from selenium.webdriver.support.ui import Select
 
 class AuthenticationProvider:
 
@@ -10,24 +11,15 @@ class AuthenticationProvider:
         self.login_url = 'http://br.ogame.gameforge.com/'
                         # http://s114-br.ogame.gameforge.com/game/index.php?page=overview
         self.index_url = 'http://s%s-br.ogame.gameforge.com' % universe + '/game/index.php'
-        headers = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) \
-        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36')]
+        # headers = [('User-agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) \
+        # AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36')]
         # Dados de autenticacao
         self.username = username
         self.password = password
         self.universe = universe
-
+        self.driver = webdriver.Firefox()
         self.logger = logging.getLogger('ogame-bot')
-        # Preparando o browser
-        self.cj = cookielib.LWPCookieJar()
 
-        self.br = Browser()
-        self.br.set_cookiejar(self.cj)
-        self.br.set_handle_robots(False)
-        self.br.addheaders = headers
-        self.path = os.path.dirname(os.path.realpath(__file__))
-        # name of the cookies file
-        self.cookies_file_name = os.path.join(self.path, 'cookies.tmp')
 
     def verify_connection(self):
         res = self.br.open(self.index_url)
@@ -42,31 +34,16 @@ class AuthenticationProvider:
             return True
 
     def connect(self):
-        self.logger.info('Opening login page ' + self.login_url)
         # Open login page
-        self.br.open(self.login_url)
-        self.br.select_form(name="loginForm")
+        self.logger.info('Opening login page ' + self.login_url)
+        self.driver.get(self.login_url)
+        self.driver.find_element_by_id('loginBtn').click()
+        Select(self.driver.find_element_by_id("serverLogin")).select_by_value("s%s-br.ogame.gameforge.com" % self.universe)
+        self.driver.find_element_by_id('usernameLogin').send_keys(self.username)
+        self.driver.find_element_by_id('passwordLogin').send_keys(self.password)
+        self.driver.find_element_by_id('loginSubmit').click()
+        self.logger.info('Logging in to server')
 
-        # enter Username and password
-        self.br['login'] = self.username
-        self.br['pass'] = self.password
-        self.br['uni'] = ['s%s-br.ogame.gameforge.com' % self.universe]
-        self.logger.info('Logging in to server: %s' % self.br['uni']  )
-        self.br.submit()
-        self.logger.info('Saving authentication data')
-        self.cj.save(self.cookies_file_name)
-
-    def get_browser(self):
-        # Check if cookies file exists
-        if os.path.isfile(self.cookies_file_name):
-            self.logger.info('Found stored cookies')
-            self.cj.load(self.cookies_file_name)
-            if self.verify_connection():
-                return self.br
-            else:
-                self.logger.info('Could not restore session from cookies file')
+    def get_driver(self):
         self.connect()
-        self.verify_connection()
-
-        self.cj.save(self.cookies_file_name)
-        return self.br
+        return self.driver
